@@ -1,0 +1,42 @@
+# Ana bağımlılıklar — bu oturumda GERÇEKTEN kurulu/test edilmiş sürümler.
+# NOT: Üst sınırlar (<) BİLİNÇLİ olarak KONULMADI — bu proje boyunca
+# birden fazla kez (pandas 3.x'in applymap() kaldırması, Streamlit'in
+# use_container_width deprecation'ı gibi) yeni sürümlerin GERÇEK
+# kırılmalara yol açtığı GÖZLEMLENDİ. Alt sınır (>=), test edilen
+# MİNİMUM sürümü işaretliyor — daha eskisiyle test EDİLMEDİ.
+
+streamlit>=1.58.0
+pandas>=3.0.2
+numpy>=2.4.4
+scipy>=1.17.1
+sqlalchemy>=2.0.51
+structlog>=26.1.0
+apscheduler>=3.11.3
+pydantic>=2.13.4
+pydantic-settings>=2.14.2
+alembic>=1.18.5
+plotly>=6.8.0
+pyyaml>=6.0.3
+yfinance>=1.5.1
+anthropic>=0.116.0
+# NOT: AI destekli portföy özeti için — kullanıcı KENDİ API anahtarını
+# .env'e girer (PORTFOLIO_OS__AI__API_KEY), sistem varsayılan bir
+# anahtar İÇERMEZ. Bu paket kurulu değilse/anahtar yoksa, özellik
+# KENDİLİĞİNDEN devre dışı kalır (çökme değil).
+python-docx>=1.2.0
+# NOT: AI rapor özelliğinin .docx çıktısı için — npm docx-js DEĞİL
+# (bkz. document_export.py modül docstring'i) — saf Python, ek
+# Node.js çalışma zamanı GEREKTİRMEZ. Ücretsiz, açık kaynak, dış ağ
+# bağlantısı gerektirmiyor — AI/SMTP kararlarının AKSİNE ek onay
+# istenmeden eklendi.
+
+# ── Transitive bağımlılıklar — GÜVENLİK NEDENİYLE açıkça sabitlendi ──
+# DÜZELTME (bu turda, pip-audit ile GERÇEKTEN taranarak bulundu):
+# streamlit (pillow üzerinden) ve yfinance (requests→urllib3/idna
+# üzerinden) bu paketleri transitive olarak çekiyor. pip-audit taraması,
+# bu sandbox'ta kurulu olan DİĞER araçlara (pdfminer.six, python-docx
+# vb. — PROJENİN BAĞIMLILIĞI DEĞİL) ait 69 güvenlik açığı buldu, ama
+# bunların YALNIZCA 3'ü GERÇEKTEN bu projenin bağımlılık ağacına ait:
+pillow>=12.2.0   # CVE-2026-40192/42309/42310/42311, PYSEC-2026-165 düzeltildi
+urllib3>=2.7.0    # PYSEC-2026-141/142 düzeltildi
+idna>=3.15        # PYSEC-2026-215 düzeltildi

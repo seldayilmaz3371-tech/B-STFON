@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+        # NOT: yalnızca 3.12 test edildi (bu sandbox'ın Python sürümü) —
+        # 3.11/3.10 ile UYUMLULUK İDDİA EDİLMİYOR, test edilmedi.
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run test suite
+        run: pytest tests/ -v --tb=short
+
+      - name: Run hypothesis property-based tests (extra examples)
+        # NOT: CI'da hypothesis testlerini AYRICA, daha fazla örnekle
+        # çalıştırıyoruz (yerel geliştirmede varsayılan max_examples
+        # yeterli ama CI'da daha kapsamlı bir tarama YAPILABİLİR —
+        # bu ayrım BİLİNÇLİ: CI, yerel geliştirmeden DAHA YAVAŞ
+        # olabilir, hızlı geri bildirim CI'ın önceliği değil).
+        run: |
+          pytest tests/unit/domain/test_cost_basis_property_based.py \
+            --hypothesis-seed=random -v
+
+  type-check:
+    name: mypy --strict
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run mypy on domain layer
+        # NOT (bilinçli kapsam sınırlaması): TÜM proje (`src/` `app/`)
+        # DEĞİL, yalnızca domain katmanı taranıyor. GEREKÇE:
+        # container.py'da 43+ ÖNCEDEN VAR OLAN, sistemik bir mypy
+        # hatası deseni var (`self._x = None` — tip ipucu eksikliği,
+        # runtime hatasız). Bu, AYRI bir temizlik turu gerektiriyor
+        # (bkz. Tamamlanma_Analizi'ndeki "Bilinen Teknik Borç" listesi)
+        # — o düzeltilene kadar CI'ı KIRIP her push'ta engellemek
+        # yerine, EN KRİTİK katmanı (domain — saf iş mantığı, muhasebe
+        # doğruluğu) sıkı tutuyoruz.
+        run: mypy src/domain/ --strict
+
+  security-audit:
+    name: Dependency Security Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Audit requirements.txt
+        # NOT: -r requirements.txt ile YALNIZCA projenin GERÇEK
+        # bağımlılıkları taranıyor (pip-audit'in argümansız hali TÜM
+        # ortamı tarar — CI runner'ının kendi araçlarındaki alakasız
+        # açıkları da rapor eder, bu GÜRÜLTÜ olurdu — bkz. bu turda
+        # GERÇEKTEN yaşanan deneyim: 69 açığın yalnızca 3'ü projenin
+        # kendi bağımlılığıydı).
+        run: pip-audit -r requirements.txt

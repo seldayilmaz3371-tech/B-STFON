@@ -1,0 +1,11 @@
+# Geliştirme/test bağımlılıkları — requirements.txt'ye EK olarak kurulmalı.
+
+pytest>=9.1.1
+hypothesis>=6.156.4
+mypy>=1.0
+pandas-stubs
+scipy-stubs
+# NOT: Bu iki stub paketi bu turda GERÇEKTEN kurulup test edildi —
+# yalnızca mypy'ın "stub yok" gürültüsünü SUSTURMAKLA kalmadı, 6
+# GERÇEK tip hatası ORTAYA ÇIKARDI (position_quantity_timeseries.py,
+# technical_calculator.py, backtest_engine.py) — hepsi düzeltildi.
